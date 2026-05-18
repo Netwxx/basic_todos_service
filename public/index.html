@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tasks</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f0f0f; color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh; padding: 2rem 1rem;
+  }
+  .container { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; font-weight: 600; color: #fff; margin-bottom: 1.75rem; letter-spacing: -0.5px; }
+  .add-form { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
+  .row { display: flex; gap: 0.6rem; }
+  input[type="text"], select, input[type="datetime-local"] {
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;
+    color: #e0e0e0; padding: 0.6rem 0.8rem; font-size: 0.9rem; outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"] { flex: 1; }
+  input[type="datetime-local"] { flex: 1; color-scheme: dark; }
+  input:focus, select:focus { border-color: #444; }
+  select { background: #1a1a1a; cursor: pointer; }
+  button.add-btn {
+    background: #fff; color: #0f0f0f; border: none; border-radius: 8px;
+    padding: 0.6rem 1.1rem; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: opacity 0.15s;
+  }
+  button.add-btn:hover { opacity: 0.85; }
+
+  .filters { display: flex; gap: 0.4rem; margin-bottom: 1.2rem; }
+  .filter-btn {
+    background: none; border: 1px solid #2a2a2a; border-radius: 6px;
+    color: #888; padding: 0.35rem 0.75rem; font-size: 0.8rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn.active { border-color: #fff; color: #fff; }
+
+  .task-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .task {
+    background: #1a1a1a; border: 1px solid #222; border-radius: 10px;
+    padding: 0.85rem 1rem; display: flex; align-items: flex-start; gap: 0.75rem;
+    transition: opacity 0.2s;
+  }
+  .task.completed { opacity: 0.4; }
+  .task-check {
+    width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #444;
+    background: none; cursor: pointer; flex-shrink: 0; margin-top: 2px;
+    transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+  }
+  .task-check.done { background: #fff; border-color: #fff; }
+  .task-check.done::after { content: '✓'; font-size: 10px; color: #0f0f0f; font-weight: 700; }
+  .task-body { flex: 1; }
+  .task-title { font-size: 0.9rem; color: #e0e0e0; line-height: 1.4; }
+  .task.completed .task-title { text-decoration: line-through; color: #555; }
+  .task-meta { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.35rem; flex-wrap: wrap; }
+  .badge {
+    font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 500;
+    border: none; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none;
+  }
+  .badge.high { background: #3a1a1a; color: #f87171; }
+  .badge.medium { background: #2a2515; color: #fbbf24; }
+  .badge.low { background: #152a1a; color: #4ade80; }
+  .reminder-label { font-size: 0.7rem; color: #555; }
+  .delete-btn {
+    background: none; border: none; color: #444; cursor: pointer;
+    font-size: 1rem; padding: 0 0.2rem; transition: color 0.15s; flex-shrink: 0;
+  }
+  .delete-btn:hover { color: #f87171; }
+  .empty { text-align: center; color: #444; font-size: 0.9rem; padding: 2rem 0; }
+
+  .settings-toggle {
+    margin-top: 2rem; background: none; border: none; color: #444;
+    font-size: 0.8rem; cursor: pointer; display: block; margin-left: auto;
+    transition: color 0.15s;
+  }
+  .settings-toggle:hover { color: #888; }
+  .settings-panel {
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px;
+    padding: 1rem; margin-top: 0.5rem; display: none;
+  }
+  .settings-panel.open { display: block; }
+  .settings-panel label { font-size: 0.8rem; color: #888; display: block; margin-bottom: 0.4rem; }
+  .settings-panel .row { align-items: center; }
+  .save-btn {
+    background: #222; border: 1px solid #333; border-radius: 6px;
+    color: #e0e0e0; padding: 0.5rem 0.9rem; font-size: 0.8rem; cursor: pointer;
+    white-space: nowrap; transition: border-color 0.15s;
+  }
+  .save-btn:hover { border-color: #555; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Tasks</h1>
+
+  <div class="add-form">
+    <div class="row">
+      <input type="text" id="taskInput" placeholder="Add a task…"/>
+      <select id="priority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+      <button class="add-btn" onclick="addTask()">Add</button>
+    </div>
+    <div class="row">
+      <input type="datetime-local" id="reminder" title="Set reminder"/>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('active', this)">Active</button>
+    <button class="filter-btn" onclick="setFilter('completed', this)">Completed</button>
+  </div>
+
+  <div class="task-list" id="taskList"></div>
+
+  <button class="settings-toggle" onclick="toggleSettings()">⚙ Settings</button>
+  <div class="settings-panel" id="settingsPanel">
+    <label>ntfy Topic</label>
+    <div class="row">
+      <input type="text" id="ntfyTopic" placeholder="netwxxt-reminders-todos" style="flex:1"/>
+      <button class="save-btn" onclick="saveConfig()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let tasks = [], filter = 'all';
+
+const fmt = iso => iso ? new Date(iso).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+
+async function load() {
+  const [t, c] = await Promise.all([
+    fetch('/api/tasks').then(r => r.json()),
+    fetch('/api/config').then(r => r.json())
+  ]);
+  tasks = t;
+  document.getElementById('ntfyTopic').value = c.ntfy_topic || '';
+  render();
+}
+
+function render() {
+  const list = document.getElementById('taskList');
+  let visible = tasks;
+  if (filter === 'active') visible = tasks.filter(t => !t.completed);
+  if (filter === 'completed') visible = tasks.filter(t => t.completed);
+  // sort: incomplete first, then by priority
+  const pOrd = {high:0,medium:1,low:2};
+  visible = [...visible].sort((a,b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    return (pOrd[a.priority]||1) - (pOrd[b.priority]||1);
+  });
+  if (!visible.length) { list.innerHTML = '<div class="empty">No tasks here.</div>'; return; }
+  list.innerHTML = visible.map(t => `
+    <div class="task ${t.completed ? 'completed' : ''}">
+      <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggle('${t.id}')"></div>
+      <div class="task-body">
+        <div class="task-title">${esc(t.title)}</div>
+        <div class="task-meta">
+          <select class="badge ${t.priority}" onchange="changePriority('${t.id}', this)">
+            <option value="low" ${t.priority==='low'?'selected':''}>low</option>
+            <option value="medium" ${t.priority==='medium'?'selected':''}>medium</option>
+            <option value="high" ${t.priority==='high'?'selected':''}>high</option>
+          </select>
+          ${t.reminder ? `<span class="reminder-label">🔔 ${fmt(t.reminder)}${t.reminderFired ? ' ✓' : ''}</span>` : ''}
+        </div>
+      </div>
+      <button class="delete-btn" onclick="del('${t.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function addTask() {
+  const input = document.getElementById('taskInput');
+  const title = input.value.trim();
+  if (!title) return;
+  const reminder = document.getElementById('reminder').value;
+  const priority = document.getElementById('priority').value;
+  const t = await fetch('/api/tasks', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ title, priority, reminder: reminder ? new Date(reminder).toISOString() : null })
+  }).then(r => r.json());
+  tasks.push(t);
+  input.value = '';
+  document.getElementById('reminder').value = '';
+  render();
+}
+
+async function toggle(id) {
+  const t = tasks.find(t => t.id === id);
+  const updated = await fetch(`/api/tasks/${id}`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ completed: !t.completed })
+  }).then(r => r.json());
+  Object.assign(t, updated);
+  render();
+}
+
+async function changePriority(id, el) {
+  const updated = await fetch(`/api/tasks/${id}`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ priority: el.value })
+  }).then(r => r.json());
+  const t = tasks.find(t => t.id === id);
+  Object.assign(t, updated);
+  render();
+}
+
+async function del(id) {
+  await fetch(`/api/tasks/${id}`, { method:'DELETE' });
+  tasks = tasks.filter(t => t.id !== id);
+  render();
+}
+
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function toggleSettings() {
+  document.getElementById('settingsPanel').classList.toggle('open');
+}
+
+async function saveConfig() {
+  const topic = document.getElementById('ntfyTopic').value.trim();
+  await fetch('/api/config', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ ntfy_topic: topic })
+  });
+  toggleSettings();
+}
+
+document.getElementById('taskInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+load();
+</script>
+</body>
+</html>

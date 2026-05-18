@@ -1,0 +1,15 @@
+[Unit]
+Description=Todo App
+After=network.target
+
+[Service]
+Type=simple
+User=todo
+WorkingDirectory=/opt/todo-app
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+Environment=PORT=3000
+
+[Install]
+WantedBy=multi-user.target
